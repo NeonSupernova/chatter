@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Chat Application{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        nav {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        nav button {
+            background-color: #0056b3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        nav button:hover {
+            background-color: #003d80;
+        }
+        .content {
+            padding: 20px;
+        }
+    </style>
+    {% block head %}
+    {% endblock %}
+</head>
+<body>
+    <nav>
+        <h1>Chat App</h1>
+        <button id="settingsButton">Settings</button>
+    </nav>
+
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background-color:white; padding:20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px;">
+        <h2>Settings</h2>
+        <label for="usernameColor">Username Color:</label>
+        <input type="color" id="usernameColor" name="usernameColor"><br><br>
+
+        <label for="usernameFont">Username Font:</label>
+        <select id="usernameFont" name="usernameFont">
+            <option value="Arial">Arial</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <!-- Add more fonts as needed -->
+        </select><br><br>
+
+        <label for="bgColor">Background Color:</label>
+        <input type="color" id="bgColor" name="bgColor"><br><br>
+
+        <label for="pColor">Paragraph Color:</label>
+        <input type="color" id="pColor" name="pColor"><br><br>
+
+        <label for="pFont">Paragraph Font:</label>
+        <select id="pFont" name="pFont">
+            <option value="Arial">Arial</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <!-- Add more fonts as needed -->
+        </select><br><br>
+
+        <button onclick="saveSettings()">Save</button>
+        <button onclick="closeSettingsModal()">Close</button>
+    </div>
+
+    <script>
+        document.getElementById('settingsButton').addEventListener('click', function() {
+            document.getElementById('settingsModal').style.display = 'block';
+        });
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            const usernameColor = document.getElementById('usernameColor').value;
+            const usernameFont = document.getElementById('usernameFont').value;
+            const bgColor = document.getElementById('bgColor').value;
+            const pColor = document.getElementById('pColor').value;
+            const pFont = document.getElementById('pFont').value;
+
+            const settings = {
+                usernameColor,
+                usernameFont,
+                bgColor,
+                pColor,
+                pFont
+            };
+
+            localStorage.setItem('userSettings', JSON.stringify(settings));
+            alert('Settings saved!');
+            closeSettingsModal();
+            window.location.reload(); // Reload the page to apply the settings
+        }
+    </script>
+</body>
+</html>

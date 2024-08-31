@@ -1,0 +1,125 @@
+{% extends "base.j2.html" %}
+
+{% block title %}Chatroom {{ code }}{% endblock %}
+
+{% block content %}
+    <h1>Chatroom {{ code }}</h1>
+    <div id="chat"></div>
+    <form id="sendMessage">
+        <textarea id="message" placeholder="Type your message..." required></textarea>
+        <button type="submit" style="display:none;">Send</button>
+    </form>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const code = "{{ code }}";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const username = localStorage.getItem('username');
+            if (!username) {
+                alert('No username found in localStorage. Please set your username before joining a chatroom.');
+                window.location.href = '/'; // Redirect to a suitable page if username is missing
+                return;
+            }
+
+            loadUserSettings();
+
+            // Emit join event with username
+            socket.emit('join', { code: code, username: username });
+
+            // Fetch and display existing messages
+            fetch(`/api/room/${code}/messages`)
+                .then(response => response.json())
+                .then(messages => {
+                    const chat = document.getElementById('chat');
+                    messages.forEach(msg => {
+                        const p = document.createElement('p');
+                        const strong = document.createElement('strong');
+                        strong.textContent = msg[0];
+                        p.appendChild(strong);
+                        p.appendChild(document.createTextNode(`: ${msg[1]}`));
+                        chat.appendChild(p);
+                    });
+                });
+
+            // Listen for new messages
+            socket.on('new_message', data => {
+                const chat = document.getElementById('chat');
+                const p = document.createElement('p');
+
+                // Create a strong element for the username
+                const strong = document.createElement('strong');
+                strong.textContent = data.username;  // Use textContent for safety
+
+                // Apply user settings to the username if available
+                applyUsernameSettings(strong);
+
+                // Append the strong element and message to the paragraph
+                p.appendChild(strong);
+                p.appendChild(document.createTextNode(`: ${data.message}`)); 
+
+                chat.appendChild(p);
+                chat.scrollTop = chat.scrollHeight;  // Auto-scroll to the bottom
+            });
+
+            // Handle message sending and Enter/Shift+Enter behavior
+            const messageInput = document.getElementById('message');
+            const sendMessageForm = document.getElementById('sendMessage');
+
+            messageInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault(); // Prevent newline
+                    sendMessageForm.requestSubmit(); // Send the message
+                }
+            });
+
+            sendMessageForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message) {
+                    await fetch(`/api/room/${code}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, message })
+                    });
+                    socket.emit('new_message', { code: code, username, message });
+                    messageInput.value = ''; // Clear the input
+                }
+            });
+        });
+
+        function loadUserSettings() {
+            const settings = JSON.parse(localStorage.getItem('userSettings'));
+            if (settings) {
+                applyUserSettings(settings);
+            }
+        }
+
+        function applyUserSettings(settings) {
+            // Apply background color
+            if (settings.bgColor) {
+                document.body.style.backgroundColor = settings.bgColor;
+            }
+            // Apply <p> font and color
+            if (settings.pFont) {
+                document.querySelectorAll('p').forEach(p => p.style.fontFamily = settings.pFont);
+            }
+            if (settings.pColor) {
+                document.querySelectorAll('p').forEach(p => p.style.color = settings.pColor);
+            }
+        }
+
+        function applyUsernameSettings(strongElement) {
+            const settings = JSON.parse(localStorage.getItem('userSettings'));
+            if (settings) {
+                // Apply username font and color to the strong element
+                if (settings.usernameFont) {
+                    strongElement.style.fontFamily = settings.usernameFont;
+                }
+                if (settings.usernameColor) {
+                    strongElement.style.color = settings.usernameColor;
+                }
+            }
+        }
+    </script>
+{% endblock %}

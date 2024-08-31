@@ -1,0 +1,148 @@
+{% extends "base.j2.html" %}
+
+{% block title %}Join or Create a Chatroom{% endblock %}
+
+{% block content %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        nav {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        nav button {
+            background-color: #0056b3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        nav button:hover {
+            background-color: #003d80;
+        }
+        .content {
+            padding: 20px;
+        }
+    </style>
+    <div class="container">
+        <h1>Join or Create a Chatroom</h1>
+        <input type="text" id="username" placeholder="Enter your username" required>
+        <input type="text" id="roomCode" placeholder="Enter room code (optional)" oninput="updateButtonText()">
+        <button id="actionButton" onclick="handleAction()">Create Room</button>
+    </div>
+    <button id="settingsButton" class="settings-button">Settings</button>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadUserSettings();
+
+            document.getElementById("settingsButton").addEventListener("click", toggleSettingsMenu);
+            document.getElementById("saveSettings").addEventListener("click", saveUserSettings);
+        });
+
+        function isValidUUID(uuid) {
+            const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            return regex.test(uuid);
+        }
+
+        function updateButtonText() {
+            const roomCode = document.getElementById('roomCode').value;
+            const button = document.getElementById('actionButton');
+
+            if (!roomCode) {
+                button.textContent = 'Create Room';
+            } else if (isValidUUID(roomCode)) {
+                button.textContent = 'Join Room';
+            } else {
+                button.textContent = 'Create Room';
+            }
+        }
+
+        async function handleAction() {
+            const roomCode = document.getElementById('roomCode').value;
+            const username = document.getElementById('username').value;
+
+            if (!username) {
+                alert('Please enter your username.');
+                return;
+            }
+
+            if (isValidUUID(roomCode)) {
+                localStorage.setItem('username', username);
+                window.location.href = `/room/${roomCode}?username=${encodeURIComponent(username)}`;
+            } else {
+                const response = await fetch('/create_room', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                localStorage.setItem('username', username);
+                window.location.href = `/room/${data.code}?username=${encodeURIComponent(username)}`;
+            }
+        }
+
+        function toggleSettingsMenu() {
+            const menu = document.getElementById("settingsMenu");
+            menu.style.display = menu.style.display === "block" ? "none" : "block";
+        }
+
+        function saveUserSettings() {
+            const usernameColor = document.getElementById("usernameColor").value;
+            const usernameFont = document.getElementById("usernameFont").value;
+            const pFont = document.getElementById("pFont").value;
+            const pColor = document.getElementById("pColor").value;
+            const bgColor = document.getElementById("bgColor").value;
+
+            const settings = {
+                usernameColor,
+                usernameFont,
+                pFont,
+                pColor,
+                bgColor
+            };
+
+            localStorage.setItem("userSettings", JSON.stringify(settings));
+
+            applyUserSettings(settings);
+            toggleSettingsMenu();
+        }
+
+        function loadUserSettings() {
+            const settings = JSON.parse(localStorage.getItem("userSettings"));
+
+            if (settings) {
+                applyUserSettings(settings);
+            }
+        }
+
+        function applyUserSettings(settings) {
+            if (settings.usernameColor) {
+                document.getElementById("username").style.color = settings.usernameColor;
+            }
+            if (settings.usernameFont) {
+                document.getElementById("username").style.fontFamily = settings.usernameFont;
+            }
+            if (settings.pFont) {
+                document.querySelectorAll("p").forEach(p => p.style.fontFamily = settings.pFont);
+            }
+            if (settings.pColor) {
+                document.querySelectorAll("p").forEach(p => p.style.color = settings.pColor);
+            }
+            if (settings.bgColor) {
+                document.body.style.backgroundColor = settings.bgColor;
+            }
+        }
+    </script>
+{% endblock %}
