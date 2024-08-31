@@ -2,8 +2,7 @@ import logging
 import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta, UTC
-from enum import verify
-from typing import Type, Any
+from typing import Type
 
 from flask import Flask, abort, jsonify, render_template, request
 from flask_cors import CORS
