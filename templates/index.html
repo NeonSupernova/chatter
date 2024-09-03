@@ -3,48 +3,14 @@
 {% block title %}Join or Create a Chatroom{% endblock %}
 
 {% block content %}
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 0;
-        }
-        nav {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        nav h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-        nav button {
-            background-color: #0056b3;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        nav button:hover {
-            background-color: #003d80;
-        }
-        .content {
-            padding: 20px;
-        }
-    </style>
-    <div class="container">
-        <h1>Join or Create a Chatroom</h1>
-        <input type="text" id="username" placeholder="Enter your username" required>
-        <input type="text" id="roomCode" placeholder="Enter room code (optional)" oninput="updateButtonText()">
-        <button id="actionButton" onclick="handleAction()">Create Room</button>
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+            <h1 class="text-2xl font-bold mb-4 text-center text-black">Join or Create a Chatroom</h1>
+            <input type="text" id="username" class="w-full p-2 mb-4 border border-gray-300 rounded" placeholder="Enter your username" required>
+            <input type="text" id="roomCode" class="w-full p-2 mb-4 border border-gray-300 rounded" placeholder="Enter room code (optional)" oninput="updateButtonText()">
+            <button id="actionButton" onclick="handleAction()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-700">Create Room</button>
+        </div>
     </div>
-    <button id="settingsButton" class="settings-button">Settings</button>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             loadUserSettings();
@@ -103,14 +69,12 @@
             const usernameFont = document.getElementById("usernameFont").value;
             const pFont = document.getElementById("pFont").value;
             const pColor = document.getElementById("pColor").value;
-            const bgColor = document.getElementById("bgColor").value;
 
             const settings = {
                 usernameColor,
                 usernameFont,
                 pFont,
                 pColor,
-                bgColor
             };
 
             localStorage.setItem("userSettings", JSON.stringify(settings));
@@ -140,9 +104,7 @@
             if (settings.pColor) {
                 document.querySelectorAll("p").forEach(p => p.style.color = settings.pColor);
             }
-            if (settings.bgColor) {
-                document.body.style.backgroundColor = settings.bgColor;
-            }
+
         }
     </script>
 {% endblock %}

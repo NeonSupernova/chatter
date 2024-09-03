@@ -1,13 +1,15 @@
 import logging
 import uuid
-from collections import defaultdict
+import re
 from datetime import datetime, timedelta, UTC
 from typing import Type
 
-from flask import Flask, abort, jsonify, render_template, request
+from flask import Flask, abort, jsonify, render_template, request, url_for
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
 from flask_sqlalchemy import SQLAlchemy
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from sqlalchemy.orm import Session
 
 
@@ -19,6 +21,11 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chatrooms.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app)
+limiter = Limiter(
+    get_remote_address,  # You can adjust this to use a custom key if needed
+    app=app,
+    default_limits=["200 per day", "50 per hour"],  # Example default limits
+)
 socket_io = SocketIO(app)
 db = SQLAlchemy(app)
 
@@ -38,15 +45,15 @@ class BaseVerifier:
 
 class MessageVerifier(BaseVerifier):
     checks = {
-        "Message should be between 1 and 200": lambda text: len(text) == 0 or len(text) > MAX_MESSAGE_LENGTH
+        "Message should be between 1 and 200": lambda text: 1 <= len(text) <= MAX_MESSAGE_LENGTH
     }
     default = " "
 
 
 class UsernameVerifier(BaseVerifier):
     checks = {
-        "Message should be between 1 and 200": lambda message: len(message) == 0 or len(message) > MAX_USERNAME_LENGTH,
-        "the System user cannot be used": lambda text: text.lower() == 'system',
+        "Username should be between 1 and 20 characters": lambda text: 1 <= len(text) <= MAX_USERNAME_LENGTH,
+        "The System user cannot be used": lambda text: text.lower() != 'system',
     }
     default = DEFAULT_USERNAME
 
@@ -71,34 +78,29 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.now(UTC))
 
 
-rate_limit = defaultdict(lambda: {'last_message_time': datetime.min, 'message_count': 0})
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 # Function to sanitize input
 def sanitize_input(input_str):
-    return input_str
-    #return ''.join(e for e in input_str if e.isalnum() or e.isspace())
+    # Basic sanitization to allow only alphanumeric and space
+    return re.sub(r'[^a-zA-Z0-9\s]', '', input_str)
 
 with app.app_context():
     db.create_all()
 
 def get_room(code) -> Type[Chatroom]:
-    with Session(db.engine) as session:
-        room = session.query(Chatroom).filter_by(id=code).first()
-        if room:
-            return room
-        else:
-            raise ChatroomError(f"Room with code {code} not found")
+    room = Chatroom.query.filter_by(id=code).first()
+    if room:
+        return room
+    else:
+        raise ChatroomError(f"Room with code {code} not found")
 
 def new_message(chatroom_id, username, message):
     new_msg = Message(chatroom_id=chatroom_id, username=username, content=message)
-    #socket_io.emit('new_message', {'username': username, 'message': message}, room=chatroom_id)
-    with Session(db.engine) as session:
-        session.add(new_msg)
-        session.commit()
-
+    socket_io.emit('update', {'username': username, 'message': message})
+    db.session.add(new_msg)
+    db.session.commit()
 
 @app.route('/')
 def index():
@@ -111,32 +113,6 @@ def chatroom(code):
         return render_template('chatroom.html', code=chat_room.id)
     except ChatroomError as e:
         return abort(404, description=e)
-
-@app.route('/api/room/<code>/messages', methods=['GET', 'POST'])
-def messages(code):
-    try:
-        chat_room = get_room(code)
-    except ChatroomError as e:
-        return abort(404, description=e)
-    
-    if request.method == 'POST':
-        data = request.json
-        username = UsernameVerifier(sanitize_input(data.get('username', DEFAULT_USERNAME)))
-        message = MessageVerifier(sanitize_input(data.get('message', '')))
-
-        # Rate limiting check
-        now = datetime.now()
-        if now - rate_limit[username.text]['last_message_time'] < timedelta(seconds=5):
-            rate_limit[username.text]['message_count'] += 1
-            if rate_limit[username.text]['message_count'] > 3:
-                return jsonify({'error': 'Rate limit exceeded. Please wait.'}), 429
-        else:
-            rate_limit[username.text] = {'last_message_time': now, 'message_count': 1}
-
-        new_message(chat_room.id, username.text, message.text)
-        return jsonify({'status': 'Message sent'}), 201
-    else:
-        return jsonify({'status': 'Message not sent.'}), 200
 
 
 @app.route('/create_room', methods=['POST'])
@@ -153,25 +129,32 @@ def create_room():
 
 @socket_io.on('join')
 def on_join(data):
+    print("SOMEONE JOINED")
     username = UsernameVerifier(sanitize_input(data.get('username', DEFAULT_USERNAME)))
-    #message = MessageVerifier(sanitize_input(data.get('message', '')))
     code = data.get('code', '')
     try:
         chat_room = get_room(code)
         join_room(chat_room.id)
-        new_message(chat_room.id, 'System', f"{username.text} has joined the chat")
         previous_messages = Message.query.filter_by(chatroom_id=chat_room.id).all()
         for msg in previous_messages:
-            emit('new_message', {'username': msg.username, 'message': msg.content})
+            emit('update', {'username': msg.username, 'message': msg.content})
+        new_message(chat_room.id, 'System', f"{username.text} has joined the chat")
     except ChatroomError as e:
         emit('error', {'error': 'Chatroom not found'})
         return abort(404, description=e)
 
+@socket_io.on('new_message')
+def on_new_message(data):
+    username = UsernameVerifier(sanitize_input(data.get('username', DEFAULT_USERNAME)))
+    message = MessageVerifier(sanitize_input(data.get('message', "")))
+    code = data.get('code', '')
+    new_message(code, username.text, message.text)
 
 @socket_io.on('disconnect')
 def on_disconnect():
-    # Handle user disconnection events if needed
-    pass
+    # Retrieve user details if stored in the session or elsewhere
+    # Perform any cleanup if necessary
+    emit('update', {'username': 'System', 'message': 'A user has disconnected.'})
 
 if __name__ == '__main__':
     socket_io.run(app, '0.0.0.0', port=80, log_output=True, use_reloader=False, allow_unsafe_werkzeug=True)

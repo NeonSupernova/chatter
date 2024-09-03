@@ -4,53 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Chat Application{% endblock %}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 0;
-        }
-        nav {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        nav h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-        nav button {
-            background-color: #0056b3;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        nav button:hover {
-            background-color: #003d80;
-        }
-        .content {
-            padding: 20px;
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     {% block head %}
     {% endblock %}
 </head>
 <body>
-    <nav>
-        <h1>Chat App</h1>
-        <button id="settingsButton">Settings</button>
+    <nav class="bg-blue-500 text-white p-4 flex justify-between items-center fixed top-0 w-full shadow-md">
+        <h1 class="text-xl" id="title">Chatroom</h1>
+        <h1 class="text-xl flex justify-center" id="room_code"></h1>
+        <button id="settingsButton" class="bg-blue-700 hover:bg-blue-900 text-white px-4 py-2 rounded">Settings</button>
     </nav>
 
-    <div class="content">
+    <div class="content bg-gray-600">
+        <div class="bg-gray-900 text-white h-screen flex items-center justify-center">
         {% block content %}
         {% endblock %}
+        </div>
     </div>
 
     <!-- Settings Modal -->
@@ -66,9 +35,6 @@
             <option value="Times New Roman">Times New Roman</option>
             <!-- Add more fonts as needed -->
         </select><br><br>
-
-        <label for="bgColor">Background Color:</label>
-        <input type="color" id="bgColor" name="bgColor"><br><br>
 
         <label for="pColor">Paragraph Color:</label>
         <input type="color" id="pColor" name="pColor"><br><br>
@@ -97,14 +63,12 @@
         function saveSettings() {
             const usernameColor = document.getElementById('usernameColor').value;
             const usernameFont = document.getElementById('usernameFont').value;
-            const bgColor = document.getElementById('bgColor').value;
             const pColor = document.getElementById('pColor').value;
             const pFont = document.getElementById('pFont').value;
 
             const settings = {
                 usernameColor,
                 usernameFont,
-                bgColor,
                 pColor,
                 pFont
             };
@@ -112,8 +76,35 @@
             localStorage.setItem('userSettings', JSON.stringify(settings));
             alert('Settings saved!');
             closeSettingsModal();
-            window.location.reload(); // Reload the page to apply the settings
+            applySettings(settings); // Apply settings immediately
         }
+
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('userSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+
+                // Apply saved settings
+                applySettings(settings);
+
+                // Set values in the settings modal
+                document.getElementById('usernameColor').value = settings.usernameColor;
+                document.getElementById('usernameFont').value = settings.usernameFont;
+                document.getElementById('pColor').value = settings.pColor;
+                document.getElementById('pFont').value = settings.pFont;
+            }
+        }
+
+        function applySettings(settings) {
+            // Apply settings to the page
+            document.querySelector('.content').style.color = settings.pColor;
+            document.querySelector('.content').style.fontFamily = settings.pFont;
+            document.getElementById('title').style.color = settings.usernameColor;
+            document.getElementById('title').style.fontFamily = settings.usernameFont;
+        }
+
+        // Load settings when the page loads
+        window.onload = loadSettings;
     </script>
 </body>
 </html>
