@@ -22,9 +22,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chatrooms.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app)
 limiter = Limiter(
-    get_remote_address,  # You can adjust this to use a custom key if needed
+    get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"],  # Example default limits
+    storage_uri="redis://default:aJXuXHO2nmuqKptnWVP9o8jiQ5887HRr@redis-19209.c283.us-east-1-4.ec2.redns.redis-cloud.com:19209",
+    storage_options={"socket_connect_timeout": 30},
+    default_limits=["200 per day", "50 per hour"],
+    strategy="fixed-window", # or "moving-window"
 )
 socket_io = SocketIO(app)
 db = SQLAlchemy(app)
@@ -65,6 +68,18 @@ class ChatroomError(ValueError):
 class Chatroom(db.Model):
     id = db.Column(db.String, primary_key=True)
     messages = db.relationship('Message', backref='chatroom', lazy=True)
+    users = db.relationship('User', backref='chatroom', lazy=True)
+
+
+class User(db.Model):
+    id = db.Column(db.String, primary_key=True)
+    chatroom_id = db.Column(
+        db.String,
+        db.ForeignKey('chatroom.id'),
+        nullable=False)
+    username = db.Column(db.String, unique=True, nullable=False)
+    messages = db.relationship('Message', backref='user', lazy=True)
+    addr = db.Column(db.String, nullable=False)
 
 
 class Message(db.Model):
@@ -73,7 +88,10 @@ class Message(db.Model):
         db.String,
         db.ForeignKey('chatroom.id'),
         nullable=False)
-    username = db.Column(db.String, nullable=False)
+    username = db.Column(
+        db.String,
+        db.ForeignKey('user.username'),
+        nullable=False)
     content = db.Column(db.String, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.now(UTC))
 
@@ -95,6 +113,14 @@ def get_room(code) -> Type[Chatroom]:
         return room
     else:
         raise ChatroomError(f"Room with code {code} not found")
+
+def add_user(socket_id, chatroom_id, username, sock_addr):
+    user = User.query.filter_by(chatroom_id=chatroom_id, username=username).first()
+    if not user:
+        user = User(id=socket_id, chatroom_id=chatroom_id, username=username, addr=sock_addr)
+    db.session.add(user)
+    db.session.commit()
+    return user
 
 def new_message(chatroom_id, username, message):
     new_msg = Message(chatroom_id=chatroom_id, username=username, content=message)
@@ -129,9 +155,9 @@ def create_room():
 
 @socket_io.on('join')
 def on_join(data):
-    print("SOMEONE JOINED")
     username = UsernameVerifier(sanitize_input(data.get('username', DEFAULT_USERNAME)))
     code = data.get('code', '')
+    user = add_user(chatroom_id=code, username=username.text, socket_id=request.sid, sock_addr=request.remote_addr)
     try:
         chat_room = get_room(code)
         join_room(chat_room.id)
@@ -152,9 +178,8 @@ def on_new_message(data):
 
 @socket_io.on('disconnect')
 def on_disconnect():
-    # Retrieve user details if stored in the session or elsewhere
-    # Perform any cleanup if necessary
-    emit('update', {'username': 'System', 'message': 'A user has disconnected.'})
+    user  = User.query.filter_by(id=request.sid, addr=request.remote_addr).first()
+    new_message(user.chatroom_id, 'System', f'{user.username} has disconnected.')
 
 if __name__ == '__main__':
-    socket_io.run(app, '0.0.0.0', port=80, log_output=True, use_reloader=False, allow_unsafe_werkzeug=True)
+    socket_io.run(app, '0.0.0.0', port=80, log_output=True, use_reloader=False)
