@@ -32,6 +32,8 @@ limiter = Limiter(
 socket_io = SocketIO(app)
 db = SQLAlchemy(app)
 
+loggedin_users = []
+
 class BaseVerifier:
     checks = {}
     default = ""
@@ -160,12 +162,15 @@ def on_join(data):
     username = UsernameVerifier(sanitize_input(data.get('username', DEFAULT_USERNAME)))
     code = data.get('code', '')
     user = add_user(chatroom_id=code, username=username.text, socket_id=request.sid, sock_addr=request.remote_addr)
+    loggedin_users.append(user)
     try:
         chat_room = get_room(code)
         join_room(chat_room.id)
-        emit('user_join', {'username': username.text})
-        print('userjoinsent')
+
         previous_messages = Message.query.filter_by(chatroom_id=chat_room.id).all()
+        for users in loggedin_users:
+            print(vars(users))
+            emit('user_join', {'username': users.text})
         for msg in previous_messages:
             emit('update', {'username': msg.username, 'message': msg.content})
         new_message(chat_room.id, 'System', f"{username.text} has joined the chat")
@@ -183,6 +188,7 @@ def on_new_message(data):
 @socket_io.on('disconnect')
 def on_disconnect():
     user  = User.query.filter_by(id=request.sid, addr=request.remote_addr).first()
+    loggedin_users.remove(user)
     emit('user_leave', {'username': user.username})
     new_message(user.chatroom_id, 'System', f'{user.username} has disconnected.')
 

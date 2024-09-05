@@ -25,9 +25,9 @@ RUN poetry install --no-root --no-interaction --no-ansi
 
 # Copy the rest of the application code
 COPY main.py /app
-COPY ./instance /app/instance
-COPY ./static /app/static
-COPY ./templates /app/templates
+COPY instance /app/instance
+COPY static /app/static
+COPY templates /app/templates
 
 # Expose port 80 for the Flask-SocketIO server
 EXPOSE 80
