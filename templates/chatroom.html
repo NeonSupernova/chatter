@@ -56,15 +56,29 @@
         const tooltip = document.getElementById('tooltip');
 
         share_button.addEventListener('click', function () {
-            navigator.clipboard.writeText(
-                window.location.protocol.concat(
-                    "http://",
-                    window.location.host,
-                    "?room_code=",
-                    document.getElementById("room_code").innerText
-                )
-            )
-        })
+            // Check if clipboard API is available
+            if (!navigator.clipboard) {
+                console.error("Clipboard API is not supported or unavailable in this context.");
+                return;
+            }
+
+            // Make sure room_code exists and has valid content
+            const roomCodeElement = document.getElementById("room_code");
+            if (!roomCodeElement || !roomCodeElement.innerText) {
+                console.error("Room code not found or empty");
+                return;
+            }
+
+            // Build the URL using the correct protocol and host
+            const url = `${window.location.protocol}//${window.location.host}?room_code=${roomCodeElement.innerText}`;
+
+            // Attempt to copy the URL to the clipboard
+            navigator.clipboard.writeText(url).then(() => {
+                console.log("URL copied to clipboard successfully!");
+            }).catch(err => {
+                console.error("Failed to copy URL to clipboard", err);
+            });
+        });
         share_button.addEventListener('mouseover', function () {
             tooltip.classList.remove('hidden');
         });
