@@ -100,5 +100,3 @@ function applyUsernameSettings(strongElement) {
         }
     }
 }
-
-§kaaaaa§r §g§l§o§nStorm-Weaver§r, §c§lCleaver§r §uof the Night Sky§r §kaaaaa§r

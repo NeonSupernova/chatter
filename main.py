@@ -187,4 +187,4 @@ def on_disconnect():
     new_message(user.chatroom_id, 'System', f'{user.username} has disconnected.')
 
 if __name__ == '__main__':
-    socket_io.run(app, '0.0.0.0', port=80, log_output=True, use_reloader=False)
+    socket_io.run(app, '0.0.0.0', port=80, log_output=True, use_reloader=False, allow_unsafe_werkzeug=True)

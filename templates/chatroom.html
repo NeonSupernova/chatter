@@ -56,7 +56,14 @@
         const tooltip = document.getElementById('tooltip');
 
         share_button.addEventListener('click', function () {
-            navigator.clipboard.writeText(window.location.protocol.concat(window.location.host, "?room_code=", document.getElementById("room_code").innerText))
+            navigator.clipboard.writeText(
+                window.location.protocol.concat(
+                    "http://",
+                    window.location.host,
+                    "?room_code=",
+                    document.getElementById("room_code").innerText
+                )
+            )
         })
         share_button.addEventListener('mouseover', function () {
             tooltip.classList.remove('hidden');
