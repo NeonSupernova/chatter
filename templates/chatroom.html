@@ -8,18 +8,62 @@
             document.getElementById("room_code").innerText = "{{ code }}";
         });
     </script>
-    <div class="w-3/4 h-3/4 columns-1 overflow-hidden">
-        <div class="w-full h-3/4 bg-gray-800 p-4 rounded shadow-lg">
-            <div id="chat" class="h-full overflow-y-auto font-mono text-sm">
-                <div class="mb-2">Welcome To Chatroom {{ code }} Please be disrespectful</div>
+
+
+    <div class="grid grid-rows-6 grid-cols-5 gap-4">
+        <div id="user_panel" class="flex flex-col row-span-full col-span-1 bg-gray-800 rounded shadow-lg overflow-hidden">
+            <div class="flex w-full flex-row justify-between items-center p-2">
+                <div class="text-lg">Users</div>
+                <div class="relative ml-auto overflow-visible">
+                    <svg id="share_button" width="32px" height="32px" viewBox="-2.4 -2.4 28.80 28.80" fill="none"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <g id="SVGRepo_bgCarrier" stroke-width="0" transform="translate(0,0), scale(1)">
+                            <path transform="translate(-2.4, -2.4), scale(1.7999999999999998)" fill="#7ed0ec"
+                                  d="M9.166.33a2.25 2.25 0 00-2.332 0l-5.25 3.182A2.25 2.25 0 00.5 5.436v5.128a2.25 2.25 0 001.084 1.924l5.25 3.182a2.25 2.25 0 002.332 0l5.25-3.182a2.25 2.25 0 001.084-1.924V5.436a2.25 2.25 0 00-1.084-1.924L9.166.33z"></path>
+                        </g>
+                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#FFFF00"
+                           stroke-width="0.192"></g>
+                        <g id="SVGRepo_iconCarrier">
+                            <path d="M20 13V17.5C20 20.5577 16 20.5 12 20.5C8 20.5 4 20.5577 4 17.5V13M12 3L12 15M12 3L16 7M12 3L8 7"
+                                  stroke="#000000" stroke-width="1.5" stroke-linecap="round"
+                                  stroke-linejoin="round"></path>
+                        </g>
+                    </svg>
+                    <div id="tooltip"
+                         class="hidden absolute left-1/2 transform -translate-x-1/2 mt-2 bg-gray-700 text-white text-sm rounded px-2 py-1">
+                        Share
+                    </div>
+                </div>
             </div>
         </div>
-        <form id="sendMessage">
-            <textarea class="w-full bg-gray-700 text-white mt-2 p-2 rounded outline-none" id="message" placeholder="Type your message..." required></textarea>
-            <button type="submit" style="display:none;">Send</button>
+        <!-- Chat Box and Input -->
+        <div class="flex-grow bg-gray-800 p-4 rounded shadow-lg overflow-hidden col-span-4 row-span-5">
+            <div id="chat" class="h-full max-h-96 overflow-y-auto overscroll-contain font-mono text-sm">
+                <div class="mb-2">Welcome To Chatroom {{ code }} Please be disrespectful</div>
+                <!-- Additional chat messages go here -->
+            </div>
+        </div>
+        <form id="sendMessage" class="mt-2 col-span-4 row-span-1">
+                <textarea class="w-full bg-gray-700 text-white p-2 rounded outline-none" id="message"
+                          placeholder="Type your message..." required></textarea>
         </form>
     </div>
 
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='sock.js') }}"></script>
+    <script>
+        share_button = document.getElementById("share_button");
+        const tooltip = document.getElementById('tooltip');
+
+        share_button.addEventListener('click', function () {
+            navigator.clipboard.writeText(window.location.protocol.concat(window.location.host, "?room_code=", document.getElementById("room_code").innerText))
+        })
+        share_button.addEventListener('mouseover', function () {
+            tooltip.classList.remove('hidden');
+        });
+        share_button.addEventListener('mouseout', function () {
+            tooltip.classList.add('hidden');
+});
+        
+    </script>
 {% endblock %}

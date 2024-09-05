@@ -130,7 +130,9 @@ def new_message(chatroom_id, username, message):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    room_id = request.args.get('room_code', '')
+    print(room_id)
+    return render_template('index.html', room_id=room_id)
 
 @app.route('/room/<code>', methods=['GET'])
 def chatroom(code):
@@ -161,6 +163,8 @@ def on_join(data):
     try:
         chat_room = get_room(code)
         join_room(chat_room.id)
+        emit('user_join', {'username': username.text})
+        print('userjoinsent')
         previous_messages = Message.query.filter_by(chatroom_id=chat_room.id).all()
         for msg in previous_messages:
             emit('update', {'username': msg.username, 'message': msg.content})
@@ -179,6 +183,7 @@ def on_new_message(data):
 @socket_io.on('disconnect')
 def on_disconnect():
     user  = User.query.filter_by(id=request.sid, addr=request.remote_addr).first()
+    emit('user_leave', {'username': user.username})
     new_message(user.chatroom_id, 'System', f'{user.username} has disconnected.')
 
 if __name__ == '__main__':

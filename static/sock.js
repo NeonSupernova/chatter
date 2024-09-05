@@ -38,6 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
         consoleElement.scrollTop = consoleElement.scrollHeight;  // Auto-scroll to the bottom
     });
 
+    socket.on('user_join', data => {
+        const userPanel = document.getElementById("user_panel");
+        const div = document.createElement('div');
+        div.classList.add("text-base");
+        div.classList.add("p-2")
+        div.textContent = data.username;
+        userPanel.appendChild(div);
+    });
+
     // Handle message sending and Enter/Shift+Enter behavior
 
     messageInput.addEventListener('keydown', function(event) {
@@ -91,3 +100,5 @@ function applyUsernameSettings(strongElement) {
         }
     }
 }
+
+§kaaaaa§r §g§l§o§nStorm-Weaver§r, §c§lCleaver§r §uof the Night Sky§r §kaaaaa§r

@@ -7,16 +7,26 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     {% block head %}
     {% endblock %}
+    <style>
+        #title {
+            color: #f8415e;
+            background-image: -webkit-linear-gradient(45deg, #f8415e 42%, #8c6b6a 10%, #1462cc 87%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            text-fill-color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
 </head>
 <body>
-    <nav class="bg-blue-500 text-white p-4 flex justify-between items-center fixed top-0 w-full shadow-md">
-        <h1 class="text-xl" id="title">Chatroom</h1>
+    <nav class="bg-gradient-to-r from-black via-red-500 via-60% to-pink-500 text-white p-4 flex justify-between items-center fixed top-0 w-full shadow-md">
+        <button class="text-2xl" id="title">Chattr</button>
         <h1 class="text-xl flex justify-center" id="room_code"></h1>
         <button id="settingsButton" class="bg-blue-700 hover:bg-blue-900 text-white px-4 py-2 rounded">Settings</button>
     </nav>
 
     <div class="content bg-gray-600">
-        <div class="bg-gray-900 text-white h-screen flex items-center justify-center">
+        <div class="bg-gray-900 text-white h-screen pt-20 px-4 pb-4 flex items-center justify-center">
         {% block content %}
         {% endblock %}
         </div>
@@ -52,6 +62,9 @@
     </div>
 
     <script>
+        document.getElementById("title").addEventListener('click', function () {
+            window.location.href = '/';
+        });
         document.getElementById('settingsButton').addEventListener('click', function() {
             document.getElementById('settingsModal').style.display = 'block';
         });
@@ -99,9 +112,9 @@
             // Apply settings to the page
             document.querySelector('.content').style.color = settings.pColor;
             document.querySelector('.content').style.fontFamily = settings.pFont;
-            document.getElementById('title').style.color = settings.usernameColor;
-            document.getElementById('title').style.fontFamily = settings.usernameFont;
         }
+
+
 
         // Load settings when the page loads
         window.onload = loadSettings;
