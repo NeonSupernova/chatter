@@ -29,7 +29,7 @@ COPY src/static /app/static
 COPY src/templates /app/templates
 
 # Expose port 80 for the Flask-SocketIO server
-EXPOSE 80
+EXPOSE 10000
 
 # Set the entry point to run the application
 CMD ["gunicorn -w 4 -k eventlet -b 0.0.0.0:8000 app:wsgi"]
