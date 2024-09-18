@@ -22,10 +22,9 @@ COPY pyproject.toml /app/
 
 # Install Python dependencies
 RUN poetry install --no-root --no-interaction --no-ansi
-
+RUN mkdir -p app/instance
 # Copy the rest of the application code
 COPY src/app.py /app
-COPY instance /app/instance
 COPY src/static /app/static
 COPY src/templates /app/templates
 

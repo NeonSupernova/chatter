@@ -144,7 +144,6 @@ def wsgi(*args):
             chat_room = get_room(code)
             user = add_user(request.sid, chat_room.id, username.text, request.remote_addr)
             join_room(chat_room.id)
-            #emit('user_join', {'username': user.username})
             previous_messages = Message.query.filter_by(chatroom_id=chat_room.id).all()
             current_users = User.query.filter_by(chatroom_id=chat_room.id).all()
             current_users = sorted(current_users, key=lambda u: u.username)
