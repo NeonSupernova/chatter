@@ -227,4 +227,4 @@ def sanitize_input(input_str):
 
 if __name__ == '__main__':
     app = wsgi()
-    socket_io.run(app, '0.0.0.0', port=9000, log_output=True, use_reloader=False, allow_unsafe_werkzeug=True)
+    socket_io.run(app, '0.0.0.0', port=10000, log_output=True, use_reloader=False, allow_unsafe_werkzeug=True)
