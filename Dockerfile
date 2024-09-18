@@ -24,13 +24,13 @@ COPY pyproject.toml /app/
 RUN poetry install --no-root --no-interaction --no-ansi
 
 # Copy the rest of the application code
-COPY main.py /app
+COPY src/app.py /app
 COPY instance /app/instance
-COPY static /app/static
-COPY templates /app/templates
+COPY src/static /app/static
+COPY src/templates /app/templates
 
 # Expose port 80 for the Flask-SocketIO server
 EXPOSE 80
 
 # Set the entry point to run the application
-CMD ["poetry", "run", "python", "main.py"]
+CMD ["gunicorn -w 4 -k eventlet -b 0.0.0.0:8000 app:wsgi"]
