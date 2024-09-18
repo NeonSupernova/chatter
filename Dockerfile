@@ -32,4 +32,4 @@ COPY src/templates /app/templates
 EXPOSE 10000
 
 # Set the entry point to run the application
-CMD ["gunicorn -w 4 -k eventlet -b 0.0.0.0:8000 app:wsgi"]
+CMD ["gunicorn -w 4 -k eventlet -b 0.0.0.0:10000 app:wsgi"]
